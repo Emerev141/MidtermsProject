@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
 public class Bullet : MonoBehaviour
@@ -13,6 +14,11 @@ public class Bullet : MonoBehaviour
     public ParticleSystem gunFlashPrefab;
     public AudioClip hitSfx;
     [Range(0f, 1f)] public float sfxVolume = 1f;
+
+    [Header("Impact Light")]
+    public GameObject gunFlashLightPrefab; // assign your global light prefab in Inspector
+    [Range(0.05f, 0.5f)] public float impactLightFadeDuration = 0.15f;
+
 
     private bool hasHit = false;
     private Collider2D col;
@@ -81,9 +87,9 @@ public class Bullet : MonoBehaviour
     private void PlayHitEffects(Vector3 position)
     {
         // 1) Impact / explosion FX (existing)
-        if (VfxPool.Instance != null && VfxPool.Instance.prefab != null)
+        if (VfxPool.Instance != null && hitVfxPrefab != null)
         {
-            VfxPool.Instance.PlayAt(position, Quaternion.identity);
+            VfxPool.Instance.PlayAt(position, Quaternion.identity, hitVfxPrefab.gameObject);
         }
         else if (hitVfxPrefab != null)
         {
@@ -95,9 +101,13 @@ public class Bullet : MonoBehaviour
         // 2) Gun flash at impact (separate instance)
         if (gunFlashPrefab != null)
         {
-            ParticleSystem flash = Instantiate(gunFlashPrefab, position, Quaternion.identity);
-            flash.Play();
-            Destroy(flash.gameObject, flash.main.duration + flash.main.startLifetime.constantMax);
+            VfxPool.Instance.PlayAt(position, Quaternion.identity, gunFlashPrefab.gameObject);
+        }
+
+        // 3) Impact light flash
+        if (gunFlashLightPrefab != null)
+        {
+            VfxPool.Instance.PlayAt(position, Quaternion.identity, gunFlashLightPrefab, impactLightFadeDuration);
         }
 
         // Audio
@@ -111,10 +121,34 @@ public class Bullet : MonoBehaviour
         }
     }
 
+    public void Deflect(Vector2 newDirection)
+    {
+        if (rb != null)
+        {
+            rb.simulated = true;
+            col.enabled = true;
+            hasHit = false;
+
+            rb.linearVelocity = newDirection * speed;
+        }
+    }
 
     private void Disable()
     {
-        // If you later add bullet pooling, return to pool here.
-        Destroy(gameObject);
+        BulletPool.Instance.ReturnBullet(gameObject);
     }
+
+    private System.Collections.IEnumerator FadeAndDestroyLight(Light2D light, float duration)
+    {
+        float startIntensity = light.intensity;
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            light.intensity = Mathf.Lerp(startIntensity, 0f, t / duration);
+            yield return null;
+        }
+        Destroy(light.gameObject);
+    }
+
 }

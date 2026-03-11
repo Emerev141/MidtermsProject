@@ -28,6 +28,8 @@ public class CorridorFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
     private Dictionary<Vector2Int, HashSet<Vector2Int>> roomsDictionary = new Dictionary<Vector2Int, HashSet<Vector2Int>>();
     private HashSet<Vector2Int> currentFloorPositions;
 
+
+
     protected override void RunProceduralGeneration()
     {
         CorridorFirstGeneration();

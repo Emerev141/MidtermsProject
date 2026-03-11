@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UIElements;
 
 public class Shoot : MonoBehaviour
@@ -30,6 +31,11 @@ public class Shoot : MonoBehaviour
     [Header("Casing Eject")]
     public Transform casingEjectPoint;
 
+    [Header("Gun Flash Light")]
+    public GameObject gunFlashLightPrefab; // assign your global light prefab in Inspector
+    [Range(0.05f, 0.5f)] public float lightFadeDuration = 0.15f;
+
+    [SerializeField] private AmmoManager ammoManager;
 
     void Update()
     {
@@ -62,8 +68,15 @@ public class Shoot : MonoBehaviour
         float finalAngle = baseAngle + randomOffset;
         Quaternion spawnRot = Quaternion.Euler(0f, 0f, finalAngle);
 
+        if (!ammoManager.TryConsumeBullet())
+        {
+            // No ammo, gun just clicks
+            return;
+        }
+
+
         // Spawn projectile with spread rotation
-        GameObject projectile = Instantiate(projectilePrefab, shootPoint.position, spawnRot); // assign gun flash prefab to the bullet so it can play it on impact
+        GameObject projectile = BulletPool.Instance.GetBullet(shootPoint.position, spawnRot);        // assign gun flash prefab to the bullet so it can play it on impact
         var bulletScript = projectile.GetComponent<Bullet>();
         
         if (bulletScript != null) {
@@ -82,7 +95,7 @@ public class Shoot : MonoBehaviour
         if (VfxPool.Instance != null)
         {
             // pass the local prefab as an override; if it's null, pool will use its own prefab
-            VfxPool.Instance.PlayAt(shootPoint.position, shootPoint.rotation, muzzleVfxPrefab);
+            VfxPool.Instance.PlayAt(shootPoint.position, shootPoint.rotation, muzzleVfxPrefab.gameObject);
         }
         else if (muzzleVfxPrefab != null)
         {
@@ -98,11 +111,14 @@ public class Shoot : MonoBehaviour
             ShellParticleSystemHandler.Instance.SpawnShell(spawnPos, ejectDir);
         }
 
+        if (gunFlashPrefab != null)
+        {
+            VfxPool.Instance.PlayAt(shootPoint.position, shootPoint.rotation, gunFlashPrefab.gameObject);
+        }
 
-        if (gunFlashPrefab != null) { 
-            ParticleSystem flash = Instantiate(gunFlashPrefab, shootPoint.position, shootPoint.rotation);
-            flash.Play(); 
-            Destroy(flash.gameObject, flash.main.duration + flash.main.startLifetime.constantMax);
+        if (gunFlashLightPrefab != null)
+        {
+            VfxPool.Instance.PlayAt(shootPoint.position, shootPoint.rotation, gunFlashLightPrefab, lightFadeDuration);
         }
 
         // Play firing SFX via AudioManager (randomized pitch handled there)
@@ -126,6 +142,18 @@ public class Shoot : MonoBehaviour
         {
             screenShake.triggershake(shakeDuration, shakeMagnitude);
         }
+    }
+    private System.Collections.IEnumerator FadeAndDestroyLight(Light2D light, float duration)
+    {
+        float startIntensity = light.intensity;
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            light.intensity = Mathf.Lerp(startIntensity, 0f, t / duration);
+            yield return null;
+        }
+        Destroy(light.gameObject);
     }
 
 }
