@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomDefinition
   roomType: 2
   itemPrefabs:
-  - {fileID: 1240616308581139194, guid: d706974f4715a4548b06908c4f41ba4a, type: 3}
+  - {fileID: 2205814657228802348, guid: 12620b31576bb924c9bcbb45ba4aa6c4, type: 3}
   - {fileID: 8370849736412691774, guid: a82d213ce3cc89244ba370054fed7493, type: 3}
   enemyPrefabs:
   - {fileID: 2836124787276494736, guid: b16325ea657929749927dc1a335f8ec2, type: 3}

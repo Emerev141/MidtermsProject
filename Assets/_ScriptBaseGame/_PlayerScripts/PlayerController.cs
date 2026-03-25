@@ -7,7 +7,6 @@ using System.Collections;
 public class PlayerController : MonoBehaviour
 {
     // Movement
-    public float moveSpeed = 5f;
     public Rigidbody2D rb;
 
     // Animation
@@ -51,7 +50,14 @@ public class PlayerController : MonoBehaviour
     public Vector3 shootLocalOffsetRight = new Vector3(0.5f, 0.05f, 0f);
     public Vector3 shootLocalOffsetLeft = new Vector3(-0.5f, 0.05f, 0f);
 
-    // Function (drop this into your class, replaces your existing UpdateGun)
+    public PlayerStats stats;
+
+    private UpgradeItem nearbyItem;
+    [SerializeField] private TMPro.TextMeshProUGUI pickupPrompt;
+    [SerializeField] private GameObject pickupPromptUI;
+    [SerializeField] private TMPro.TextMeshProUGUI pickupPromptText; // or UnityEngine.UI.Text
+
+
     private void UpdateGun()
     {
         if (gunTransform == null || cam == null) return;
@@ -90,9 +96,9 @@ public class PlayerController : MonoBehaviour
         void TakeDamage(float amount, Vector2 knockback);
     }
 
-
     private void Awake()
     {
+
         currentHealth = maxHealth;
         UpdateHealthUI();
 
@@ -104,6 +110,7 @@ public class PlayerController : MonoBehaviour
             sr = GetComponent<SpriteRenderer>();
 
         actions.PlayerMovement.EquipGun.performed += ctx => ToggleGun();
+        actions.PlayerMovement.PickupItem.performed += ctx => TryPickup();
     }
 
     private void UpdateHealthUI()
@@ -228,7 +235,7 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         rb.MovePosition(
-            rb.position + moveInput * moveSpeed * Time.fixedDeltaTime
+            rb.position + moveInput * stats.moveSpeed * Time.fixedDeltaTime
         );
 
         if (hasGun && gunTransform != null)
@@ -282,5 +289,36 @@ public class PlayerController : MonoBehaviour
         hasGun = !hasGun; // toggle gun
         animator.SetBool("hasGun", hasGun);
         GunObject.SetActive(hasGun); // show/hide gun sprite
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        var item = collision.GetComponent<UpgradeItem>();
+        if (item != null)
+        {
+            nearbyItem = item;
+            pickupPromptText.text = $"Press E to pick up {item.ItemName}";
+            pickupPromptUI.SetActive(true);   // shows both background + text
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        var item = collision.GetComponent<UpgradeItem>();
+        if (item != null && item == nearbyItem)
+        {
+            nearbyItem = null;
+            pickupPromptUI.SetActive(false);  // hides both background + text
+        }
+    }
+
+    private void TryPickup()
+    {
+        if (nearbyItem != null)
+        {
+            nearbyItem.Pickup(stats);
+            nearbyItem = null;
+            pickupPromptUI.SetActive(false);  // hide after pickup
+        }
     }
 }

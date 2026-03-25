@@ -23,23 +23,21 @@ public class BulletPool : MonoBehaviour
             bulletPool.Enqueue(bullet);
         }
     }
-   
-    public GameObject GetBullet(Vector3 position, Quaternion rotation)
-    {
-        GameObject bullet;
 
-        if (bulletPool.Count > 0)
-        {
-            bullet = bulletPool.Dequeue();
-        }
-        else
-        {
-            bullet = Instantiate(bulletPrefab);
-        }
+    public GameObject GetBullet(Vector3 position, Quaternion rotation, PlayerStats stats = null)
+    {
+        GameObject bullet = bulletPool.Count > 0 ? bulletPool.Dequeue() : Instantiate(bulletPrefab);
 
         bullet.transform.position = position;
         bullet.transform.rotation = rotation;
         bullet.SetActive(true);
+
+        var bulletScript = bullet.GetComponent<Bullet>();
+        if (bulletScript != null && stats != null)
+        {
+            bulletScript.Initialize(stats);
+            Debug.Log("[BulletPool] Injected PlayerStats into bullet");
+        }
 
         return bullet;
     }

@@ -16,24 +16,53 @@ public class Bullet : MonoBehaviour
     [Range(0f, 1f)] public float sfxVolume = 1f;
 
     [Header("Impact Light")]
-    public GameObject gunFlashLightPrefab; // assign your global light prefab in Inspector
+    public GameObject gunFlashLightPrefab;
     [Range(0.05f, 0.5f)] public float impactLightFadeDuration = 0.15f;
 
+    protected bool hasHit = false;
+    protected Collider2D col;
+    protected Rigidbody2D rb;
 
-    private bool hasHit = false;
-    private Collider2D col;
-    private Rigidbody2D rb;
-
-    private bool isParried = false;
+    protected bool isParried = false;
     public bool IsParried => isParried;
 
-    void Awake()
+    protected PlayerStats stats;
+
+    public void Initialize(PlayerStats stats)
+    {
+        this.stats = stats;
+    }
+
+    protected virtual int CalculateFinalDamage()
+    {
+        if (stats == null)
+        {
+            Debug.LogWarning("[Bullet] PlayerStats not set, using base damage");
+            return damage;
+        }
+
+        int finalDamage = stats.CalculateDamage(damage);
+
+        if (finalDamage > damage)
+        {
+            Debug.Log($"[Bullet] CRITICAL STRIKE! Enemy took {finalDamage} damage (base {damage})");
+        }
+        else
+        {
+            Debug.Log($"[Bullet] Normal hit. Enemy took {finalDamage} damage");
+        }
+
+        return finalDamage;
+    }
+
+
+    protected virtual void Awake()
     {
         col = GetComponent<Collider2D>();
         rb = GetComponent<Rigidbody2D>();
     }
 
-    void OnEnable()
+    protected virtual void OnEnable()
     {
         hasHit = false;
         if (col != null) col.enabled = true;
@@ -42,19 +71,13 @@ public class Bullet : MonoBehaviour
         Invoke(nameof(Disable), lifetime);
     }
 
-    void OnDisable()
+    protected virtual void OnCollisionEnter2D(Collision2D collision)
     {
-        CancelInvoke(nameof(Disable));
-    }
-
-    void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (hasHit) return;                 // guard against double hits
+        if (hasHit) return;
         if (collision.gameObject.CompareTag("Player")) return;
 
         hasHit = true;
 
-        // Immediately stop physics and disable collider to avoid further collisions
         if (rb != null)
         {
             rb.linearVelocity = Vector2.zero;
@@ -77,7 +100,18 @@ public class Bullet : MonoBehaviour
         Enemy enemy = collision.gameObject.GetComponent<Enemy>();
         if (enemy != null)
         {
-            enemy.TakeDamage(damage);
+            int finalDamage = CalculateFinalDamage();
+
+            if (finalDamage > damage)
+            {
+                Debug.Log($"[Bullet] CRITICAL STRIKE! Enemy {enemy.name} took {finalDamage} damage (base {damage})");
+            }
+            else
+            {
+                Debug.Log($"[Bullet] Normal hit. Enemy {enemy.name} took {finalDamage} damage");
+            }
+
+            enemy.TakeDamage(finalDamage);
             PlayHitEffects(hitPoint);
             Disable();
             return;
@@ -123,38 +157,23 @@ public class Bullet : MonoBehaviour
             AudioSource.PlayClipAtPoint(hitSfx, position, sfxVolume);
         }
     }
+
     public void Deflect(Vector2 newDirection)
     {
-        if (isParried) return; // prevent multiple parries
-
-        isParried = true;      // mark as parried
+        if (isParried) return;
+        isParried = true;
 
         if (rb != null)
         {
             rb.simulated = true;
             col.enabled = true;
             hasHit = false;
-
             rb.linearVelocity = newDirection * speed;
         }
     }
 
-    private void Disable()
+    protected virtual void Disable()
     {
         BulletPool.Instance.ReturnBullet(gameObject);
     }
-
-    private System.Collections.IEnumerator FadeAndDestroyLight(Light2D light, float duration)
-    {
-        float startIntensity = light.intensity;
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            light.intensity = Mathf.Lerp(startIntensity, 0f, t / duration);
-            yield return null;
-        }
-        Destroy(light.gameObject);
-    }
-
 }

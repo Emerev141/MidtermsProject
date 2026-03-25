@@ -271,7 +271,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20015026b30ce074a87ec992d4177fd9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  maxHealth: 10
+  maxHealth: 50
   bulletPrefab: {fileID: 2195179501864154324, guid: 8a2831cc42756d74ab8119c234e6a25f, type: 3}
   firePoint: {fileID: 1188712958261985300}
   attackCooldown: 0.2

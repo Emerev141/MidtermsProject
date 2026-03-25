@@ -1,6 +1,7 @@
+using DG.Tweening.Core.Easing;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections;
 
 [RequireComponent(typeof(CircleCollider2D))]
 public class ParryController : MonoBehaviour
@@ -14,6 +15,7 @@ public class ParryController : MonoBehaviour
     [SerializeField] private bool fullFreeze = true;       // toggle full freeze vs slow motion
 
     private bool isParrying = false;
+    private ParryFlashFX flashFX;
 
     public static event System.Action OnParrySuccess;
 
@@ -24,6 +26,8 @@ public class ParryController : MonoBehaviour
 
         parryCollider.isTrigger = true;
         parryCollider.enabled = false;
+
+        flashFX = Object.FindFirstObjectByType<ParryFlashFX>();
     }
 
     public void OnParry()
@@ -67,11 +71,12 @@ public class ParryController : MonoBehaviour
 
     private void TriggerParrySuccess()
     {
-        // Call hitstop when parry succeeds
         HitStopManager.Instance?.StartHitStop(hitStopDuration, fullFreeze);
+        OnParrySuccess?.Invoke();
 
-        OnParrySuccess?.Invoke(); // notify reload system
+        flashFX?.TriggerFlash(); // play the white flash
     }
+
 
     void OnDrawGizmosSelected()
     {

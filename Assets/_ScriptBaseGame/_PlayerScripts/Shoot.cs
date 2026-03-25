@@ -37,6 +37,9 @@ public class Shoot : MonoBehaviour
 
     [SerializeField] private AmmoManager ammoManager;
 
+    [SerializeField] private PlayerStats playerStats;
+
+
     void Update()
     {
         if (Mouse.current.leftButton.wasPressedThisFrame)
@@ -74,12 +77,11 @@ public class Shoot : MonoBehaviour
             return;
         }
 
-
-        // Spawn projectile with spread rotation
-        GameObject projectile = BulletPool.Instance.GetBullet(shootPoint.position, spawnRot);        // assign gun flash prefab to the bullet so it can play it on impact
+        GameObject projectile = BulletPool.Instance.GetBullet(shootPoint.position, spawnRot, playerStats);
         var bulletScript = projectile.GetComponent<Bullet>();
-        
-        if (bulletScript != null) {
+
+        if (bulletScript != null)
+        {
             bulletScript.gunFlashPrefab = gunFlashPrefab;
         }
 

@@ -11,9 +11,9 @@ public class HitStopManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null) { Instance = this; DontDestroyOnLoad(gameObject); }
-        else Destroy(gameObject);
+        DontDestroyOnLoad(gameObject); 
     }
+
 
     /// <summary>
     /// Request a hitstop for duration (unscaled seconds). Multiple requests stack safely.
