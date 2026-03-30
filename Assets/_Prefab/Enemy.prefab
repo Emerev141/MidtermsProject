@@ -190,9 +190,9 @@ GameObject:
   - component: {fileID: 919273360828666880}
   - component: {fileID: 7932272758015283960}
   - component: {fileID: 6922656266371539748}
-  - component: {fileID: 983683618243262935}
   - component: {fileID: 979720776248099918}
   - component: {fileID: 8562350115920808560}
+  - component: {fileID: 983683618243262935}
   - component: {fileID: 8869924632831052555}
   m_Layer: 9
   m_Name: Enemy
@@ -289,42 +289,6 @@ MonoBehaviour:
   slowWhenNotFacingTarget: 1
   whenCloseToDestination: 0
   constrainInsideGraph: 0
---- !u!58 &983683618243262935
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2024123285946609020}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: -0.00531888, y: 0}
-  m_Radius: 0.55468106
 --- !u!114 &979720776248099918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -377,12 +341,49 @@ MonoBehaviour:
   dropCount: 1
   dropChance: 1
   lootSpawnRadius: 0.2
+  bloodParticlePrefab: {fileID: 1125065753516410155, guid: a56973711655e1f44b860980855d4b99, type: 3}
   healthUI: {fileID: 7147760493242860091}
   shootSound: {fileID: 0}
   sprayAngle: 10
   burstCount: 3
   burstInterval: 0.1
   burstCooldown: 2
+--- !u!58 &983683618243262935
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2024123285946609020}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: -0.00531888, y: 0}
+  m_Radius: 0.55468106
 --- !u!50 &8869924632831052555
 Rigidbody2D:
   serializedVersion: 5
@@ -660,8 +661,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.25}
   m_AnchorMax: {x: 1, y: 0.75}
-  m_AnchoredPosition: {x: -0.040000916, y: 0}
-  m_SizeDelta: {x: -10.07, y: 0}
+  m_AnchoredPosition: {x: 3.1, y: 0}
+  m_SizeDelta: {x: -0.05, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &8220660719284559681
 GameObject:
@@ -697,8 +698,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 10, y: 0}
+  m_AnchoredPosition: {x: -3, y: 0}
+  m_SizeDelta: {x: -0.03, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7132866193026879371
 CanvasRenderer:

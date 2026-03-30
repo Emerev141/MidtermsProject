@@ -26,7 +26,7 @@ public class MeleeHitbox : MonoBehaviour
             int baseDamage = playerStats.CalculateFinalDamage();
             int finalDamage = baseDamage + meleeDamage;
 
-            enemy.TakeDamage(finalDamage);
+            enemy.TakeDamage(finalDamage, enemy.transform.position, Vector3.zero);
 
             // Apply knockback if enemy has Rigidbody2D
             Rigidbody2D rb = enemy.GetComponent<Rigidbody2D>();

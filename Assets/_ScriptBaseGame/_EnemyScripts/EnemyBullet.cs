@@ -73,7 +73,7 @@ public class EnemyBullet : MonoBehaviour
             var enemy = other.GetComponent<Enemy>();
             if (enemy != null)
             {
-                enemy.TakeDamage(damage);
+                enemy.TakeDamage(damage, enemy.transform.position, Vector3.zero);
             }
             Destroy(gameObject);
             return;

@@ -48,11 +48,10 @@ public class CorridorFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
         StartCoroutine(DelayedGraphUpdate());
     }
 
-
     private IEnumerator DelayedGraphUpdate()
     {
-        // Wait more than one frame if colliders need time to bake
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.5f); // give colliders time
+        Physics2D.SyncTransforms();            // force collider update
         UpdateGraphBounds(currentFloorPositions);
     }
 
@@ -66,7 +65,7 @@ public class CorridorFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
         CreateCorridors(floorPositions, potentialRoomPositions);
         Debug.Log($"[DungeonGen] Corridors created. Potential room positions: {potentialRoomPositions.Count}");
 
-        HashSet<Vector2Int> roomPositions = CreateRooms(potentialRoomPositions);
+        HashSet<Vector2Int> roomPositions = CreateRooms(potentialRoomPositions, floorPositions);
         Debug.Log($"[DungeonGen] Rooms created. Room count: {roomsDictionary.Count}");
 
         List<Vector2Int> deadEnds = FindAllDeadEnds(floorPositions);
@@ -118,7 +117,7 @@ public class CorridorFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
         return deadEnds;
     }
 
-    private HashSet<Vector2Int> CreateRooms(HashSet<Vector2Int> potentialRoomPositions)
+    private HashSet<Vector2Int> CreateRooms(HashSet<Vector2Int> potentialRoomPositions, HashSet<Vector2Int> floorPositions)
     {
         HashSet<Vector2Int> roomPositions = new HashSet<Vector2Int>();
         int roomToCreateCount = Mathf.RoundToInt(potentialRoomPositions.Count * roomPercent);
@@ -136,13 +135,52 @@ public class CorridorFirstDungeonGenerator : SimpleRandomWalkDungeonGenerator
         }
 
         // Only force extra rooms if we ended up with fewer than 5
-        while (roomsDictionary.Count < 5 && potentialRoomPositions.Count > 0)
+        // Ensure minimum room count safely
+        if (roomsDictionary.Count < 5)
         {
-            var extraRoomPos = potentialRoomPositions.ElementAt(UnityEngine.Random.Range(0, potentialRoomPositions.Count));
-            var extraRoom = RunRandomWalk(randomWalkParameters, extraRoomPos);
-            roomPositions.UnionWith(extraRoom);
-            roomsDictionary[extraRoomPos] = extraRoom;
+            int needed = 5 - roomsDictionary.Count;
+            Debug.LogWarning($"Only {roomsDictionary.Count} rooms generated, forcing {needed} extra.");
+
+            // Step 1: collect dead ends not already used
+            var deadEndCandidates = FindAllDeadEnds(floorPositions)
+                .Where(p => !roomsDictionary.ContainsKey(p))
+                .ToList();
+
+            // Step 2: collect unused corridor positions as fallback
+            var unusedCorridorCandidates = potentialRoomPositions
+                .Where(p => !roomsDictionary.ContainsKey(p))
+                .ToList();
+
+            // Step 3: fill rooms from dead ends first, then corridors
+            for (int i = 0; i < needed; i++)
+            {
+                Vector2Int pos;
+
+                if (deadEndCandidates.Count > 0)
+                {
+                    pos = deadEndCandidates[UnityEngine.Random.Range(0, deadEndCandidates.Count)];
+                    deadEndCandidates.Remove(pos);
+                }
+                else if (unusedCorridorCandidates.Count > 0)
+                {
+                    pos = unusedCorridorCandidates[UnityEngine.Random.Range(0, unusedCorridorCandidates.Count)];
+                    unusedCorridorCandidates.Remove(pos);
+                }
+                else
+                {
+                    Debug.LogWarning("No valid positions left to force extra rooms.");
+                    break;
+                }
+
+                var roomFloor = RunRandomWalk(randomWalkParameters, pos);
+
+                // Union immediately so colliders bake correctly
+                roomPositions.UnionWith(roomFloor);
+                roomsDictionary[pos] = roomFloor;
+            }
         }
+
+        floorPositions.UnionWith(roomPositions);
 
         Debug.Log($"[DungeonGen] Final room count: {roomsDictionary.Count}");
         return roomPositions;

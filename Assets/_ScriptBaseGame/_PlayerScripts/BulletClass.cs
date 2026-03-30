@@ -86,10 +86,12 @@ public class Bullet : MonoBehaviour
         }
         if (col != null) col.enabled = false;
 
+        // Get hit point
         Vector3 hitPoint = transform.position;
         if (collision.contacts != null && collision.contacts.Length > 0)
             hitPoint = collision.contacts[0].point;
 
+        // If wall, just play effects
         if (collision.gameObject.CompareTag("Wall"))
         {
             PlayHitEffects(hitPoint);
@@ -97,17 +99,25 @@ public class Bullet : MonoBehaviour
             return;
         }
 
+        // Enemy damage
         Enemy enemy = collision.gameObject.GetComponent<Enemy>();
         if (enemy != null && stats != null)
         {
             int damage = stats.CalculateFinalDamage();
-            enemy.TakeDamage(damage);
+
+            // Bullet trajectory
+            Vector3 bulletDirection = rb.linearVelocity.normalized;
+
+            // Pass everything into TakeDamage
+            enemy.TakeDamage(damage, hitPoint, bulletDirection);
+
             Debug.Log($"[Bullet] Hit enemy for {damage}");
         }
 
         PlayHitEffects(hitPoint);
         Disable();
     }
+
 
     private void PlayHitEffects(Vector3 position)
     {

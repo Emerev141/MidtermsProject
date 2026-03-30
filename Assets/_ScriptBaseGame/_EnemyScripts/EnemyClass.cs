@@ -1,6 +1,7 @@
 using Pathfinding;
-using UnityEngine;
+using System;
 using System.Collections;
+using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
@@ -61,9 +62,16 @@ public class Enemy : MonoBehaviour
     [SerializeField] private float dropChance = 1f;    // probability to drop (0..1)
     [SerializeField] private float lootSpawnRadius = 0.2f; // small random offset
 
+    [Header("Effects")]
+    [SerializeField] public ParticleSystem bloodParticlePrefab;
+
     [SerializeField] private EnemyHealthUI healthUI;
 
     private Color originalColor = Color.white;
+
+    public static event Action<Enemy> OnEnemyDied;
+
+    
 
     // Modify Awake to cache Rigidbody2D (add this line inside Awake)
     protected virtual void Awake()
@@ -169,7 +177,7 @@ public class Enemy : MonoBehaviour
 
 
     // Replace your existing TakeDamage method with this (keeps flash + death logic, adds knockback)
-    public virtual void TakeDamage(int amount)
+    public virtual void TakeDamage(int amount, Vector3 hitPoint, Vector3 bulletDirection)
     {
         if (isDead)
         {
@@ -219,6 +227,23 @@ public class Enemy : MonoBehaviour
 
             // locally wait unscaled then start knockback
             StartCoroutine(DelayedKnockbackAfterHitStop(knockDir, hitStopDuration));
+        }
+
+        if (BloodParticleSystemHandler.Instance != null)
+        {
+            BloodParticleSystemHandler.Instance.SpawnBlood(transform.position);
+        }
+
+        if (bloodParticlePrefab != null)
+        {
+            // Flip direction if you want spray outward
+            Vector3 sprayDir = -bulletDirection;
+
+            // Only tilt on X axis (top-down)
+            float angleX = Mathf.Atan2(sprayDir.y, sprayDir.x) * Mathf.Rad2Deg;
+            Quaternion rot = Quaternion.Euler(angleX, 0f, 0f);
+
+            Instantiate(bloodParticlePrefab, hitPoint, rot);
         }
 
         if (currentHealth <= 0)
@@ -336,10 +361,10 @@ public class Enemy : MonoBehaviour
         {
             for (int i = 0; i < dropCount; i++)
             {
-                if (Random.value <= dropChance)
+                if (UnityEngine.Random.value <= dropChance)
                 {
                     // small random offset so items don't overlap exactly
-                    Vector2 offset = Random.insideUnitCircle * lootSpawnRadius;
+                    Vector2 offset = UnityEngine.Random.insideUnitCircle * lootSpawnRadius;
                     Vector3 spawnPos = transform.position + (Vector3)offset;
 
                     GameObject lootObj = Instantiate(lootPrefab, spawnPos, Quaternion.identity);
@@ -388,6 +413,8 @@ public class Enemy : MonoBehaviour
             rb2d.linearVelocity = Vector2.zero;
             rb2d.bodyType = RigidbodyType2D.Static;
         }
+
+        OnEnemyDied?.Invoke(this);
 
         Destroy(gameObject, 20f);
     }

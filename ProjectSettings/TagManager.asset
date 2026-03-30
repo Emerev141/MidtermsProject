@@ -7,6 +7,8 @@ TagManager:
   - Wall
   - Enemy
   - Secondary Camera
+  - BG Tag
+  - BG
   layers:
   - Default
   - TransparentFX
@@ -24,9 +26,9 @@ TagManager:
   - Light
   - Melee
   - fx
-  - 
-  - 
-  - 
+  - 3D Objects
+  - Ground Test Layer
+  - BG Test Layer
   - 
   - 
   - 

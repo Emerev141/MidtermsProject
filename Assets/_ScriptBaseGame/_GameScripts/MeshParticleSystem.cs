@@ -160,4 +160,9 @@ public class MeshParticleSystem : MonoBehaviour {
         }
     }
 
+    public int GetUVCount()
+    {
+        return uvCoordsArray.Length;
+    }
+
 }

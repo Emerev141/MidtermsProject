@@ -3,10 +3,8 @@ using UnityEngine;
 public class EnemySpawner : MonoBehaviour
 {
     [SerializeField] private GameObject enemyPrefab;
-    [SerializeField] private float baseSpawnInterval = 5f;
 
     private DifficultyManager difficultyManager;
-    private float timer;
 
     public void Initialize(DifficultyManager dm)
     {
@@ -24,34 +22,17 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
-    void Update()
-    {
-        if (difficultyManager == null)
-        {
-            Debug.LogWarning("[Spawner] No DifficultyManager found, cannot spawn.");
-            return;
-        }
-
-        timer += Time.deltaTime;
-        float currentInterval = baseSpawnInterval / difficultyManager.DifficultyMultiplier;
-
-        if (timer >= currentInterval)
-        {
-            Debug.Log($"[Spawner] Timer hit {currentInterval:F2}s, spawning enemy.");
-            SpawnEnemy();
-            timer = 0f;
-        }
-    }
-
-    private void SpawnEnemy()
+    // Called by WaveManager
+    public GameObject SpawnEnemy()
     {
         if (enemyPrefab == null)
         {
             Debug.LogError("[Spawner] No enemyPrefab assigned!");
-            return;
+            return null;
         }
 
-        Instantiate(enemyPrefab, transform.position, Quaternion.identity);
+        GameObject enemy = Instantiate(enemyPrefab, transform.position, Quaternion.identity);
         Debug.Log($"[Spawner] Enemy spawned at {transform.position}");
+        return enemy;
     }
 }
