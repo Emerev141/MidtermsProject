@@ -65,10 +65,13 @@ public class ShellParticleSystemHandler : MonoBehaviour {
 
     public void SpawnShell(Vector3 worldPosition, Vector3 worldDirection)
     {
-        // Convert to mesh local space so vertices are placed correctly
         Transform meshTransform = meshParticleSystem.transform;
         Vector3 localPosition = meshTransform.InverseTransformPoint(worldPosition);
         Vector3 localDirection = meshTransform.InverseTransformDirection(worldDirection).normalized;
+
+        // Add random spread angle
+        float angle = Random.Range(-30f, 30f); // tweak spread range
+        localDirection = Quaternion.Euler(0, 0, angle) * localDirection;
 
         singleList.Add(new Single(localPosition, localDirection, meshParticleSystem, casingSize));
     }
@@ -98,9 +101,17 @@ public class ShellParticleSystemHandler : MonoBehaviour {
             quadIndex = meshParticleSystem.AddQuad(position, rotation, quadSize, true, 0);
         }
 
-        public void Update() {
+        public void Update()
+        {
             position += direction * moveSpeed * Time.deltaTime;
             rotation += 360f * (moveSpeed / 10f) * Time.deltaTime;
+
+            // Bounce when hitting ground
+            if (position.y <= 0f && direction.y < 0f)
+            {
+                direction.y = -direction.y * 0.5f; // invert and dampen
+                position.y = 0f;                   // clamp to ground
+            }
 
             meshParticleSystem.UpdateQuad(quadIndex, position, rotation, quadSize, true, 0);
 

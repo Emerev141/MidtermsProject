@@ -1,6 +1,7 @@
 using Pathfinding;
 using System;
 using System.Collections;
+using System.Linq;
 using UnityEngine;
 
 public class Enemy : MonoBehaviour
@@ -62,6 +63,12 @@ public class Enemy : MonoBehaviour
     [SerializeField] private float dropChance = 1f;    // probability to drop (0..1)
     [SerializeField] private float lootSpawnRadius = 0.2f; // small random offset
 
+    [Header("Upgrade Drop")]
+    [SerializeField] private PlayerUpgradeData[] allUpgrades; // same as chest
+    [Range(0f, 1f)]
+    [SerializeField] private float upgradeDropChance = 0.2f; // changeable in Inspector
+
+
     [Header("Effects")]
     [SerializeField] public ParticleSystem bloodParticlePrefab;
 
@@ -70,8 +77,6 @@ public class Enemy : MonoBehaviour
     private Color originalColor = Color.white;
 
     public static event Action<Enemy> OnEnemyDied;
-
-    
 
     // Modify Awake to cache Rigidbody2D (add this line inside Awake)
     protected virtual void Awake()
@@ -243,7 +248,16 @@ public class Enemy : MonoBehaviour
             float angleX = Mathf.Atan2(sprayDir.y, sprayDir.x) * Mathf.Rad2Deg;
             Quaternion rot = Quaternion.Euler(angleX, 0f, 0f);
 
-            Instantiate(bloodParticlePrefab, hitPoint, rot);
+            // Instantiate and play
+            var psObj = Instantiate(bloodParticlePrefab, hitPoint, rot);
+            var ps = psObj.GetComponent<ParticleSystem>();
+            if (ps != null)
+            {
+                ps.Play();
+
+                // Destroy after particle finishes
+                Destroy(psObj.gameObject, ps.main.duration + ps.main.startLifetime.constantMax);
+            }
         }
 
         if (currentHealth <= 0)
@@ -385,7 +399,27 @@ public class Enemy : MonoBehaviour
             }
         }
 
-        // --- existing death behavior (keep your current code) ---
+        // --- Upgrade Drop ---
+        if (UnityEngine.Random.value <= upgradeDropChance)
+        {
+            PlayerUpgradeData upgrade = GetRandomUpgrade();
+            if (upgrade != null)
+            {
+                Vector2 offset = UnityEngine.Random.insideUnitCircle * lootSpawnRadius;
+                Vector3 spawnPos = transform.position + (Vector3)offset;
+                GameObject item = Instantiate(upgrade.visualPrefab, spawnPos, Quaternion.identity);
+
+                // Optional: delay before pickup
+                Collider2D col = item.GetComponent<Collider2D>();
+                if (col != null)
+                {
+                    col.enabled = false;
+                    StartCoroutine(EnableColliderAfterDelay(col, 2f));
+                }
+            }
+        }
+
+        // --- existing death behavior ---
         if (spriteRenderer != null)
         {
             spriteRenderer.color = originalColor;
@@ -418,4 +452,31 @@ public class Enemy : MonoBehaviour
 
         Destroy(gameObject, 20f);
     }
+
+    private PlayerUpgradeData GetRandomUpgrade()
+    {
+        float roll = UnityEngine.Random.value;
+        UpgradeRarity chosenRarity;
+
+        if (roll < 0.7f) chosenRarity = UpgradeRarity.Common;
+        else if (roll < 0.9f) chosenRarity = UpgradeRarity.Rare;
+        else if (roll < 0.98f) chosenRarity = UpgradeRarity.Epic;
+        else chosenRarity = UpgradeRarity.Legendary;
+
+        var candidates = allUpgrades.Where(u => u.rarity == chosenRarity).ToList();
+        if (candidates.Count == 0)
+        {
+            Debug.LogWarning($"No upgrades found for rarity {chosenRarity}, defaulting to Common.");
+            candidates = allUpgrades.Where(u => u.rarity == UpgradeRarity.Common).ToList();
+        }
+
+        return candidates.Count > 0 ? candidates[UnityEngine.Random.Range(0, candidates.Count)] : null;
+    }
+
+    private IEnumerator EnableColliderAfterDelay(Collider2D col, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        col.enabled = true;
+    }
+
 }

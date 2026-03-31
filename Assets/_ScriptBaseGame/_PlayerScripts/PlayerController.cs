@@ -1,8 +1,9 @@
+using DG.Tweening;
+using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
-using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
@@ -66,8 +67,24 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private GameObject dashSpeedLineFX;
     [SerializeField] private Transform perspectiveCam; // assign your perspective camera
 
+    [Header("Dash Squeeze Settings")]
+    [SerializeField] private float dashSqueezeX = 1.2f;   // stretch horizontally
+    [SerializeField] private float dashSqueezeY = 0.8f;   // squash vertically
+    [SerializeField] private float dashEaseIn = 0.5f;     // % of dash time to squeeze
+    [SerializeField] private float dashEaseOut = 0.5f;    // % of dash time to release
+    [SerializeField] private Ease dashSqueezeEase = Ease.OutQuad;
+    [SerializeField] private Ease dashReleaseEase = Ease.OutQuad;
+
+    [Header("Dash Slow Motion Settings")]
+    [SerializeField] private bool enableDashSlowMo = true;
+    [SerializeField] private float slowMoScale = 0.5f;   // 0.5 = half speed
+    [SerializeField] private float slowMoEaseIn = 0.1f;  // seconds to ease into slowmo
+    [SerializeField] private float slowMoEaseOut = 0.1f; // seconds to ease out
+
+
     private bool isDashing = false;
     private bool canDash = true;
+    private Vector3 originalScale;
 
     private void UpdateGun()
     {
@@ -109,6 +126,7 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
+        originalScale = transform.localScale;
 
         currentHealth = maxHealth;
         UpdateHealthUI();
@@ -196,15 +214,21 @@ public class PlayerController : MonoBehaviour
             float elapsed = 0f;
             bool flashOn = true;
 
-            while (elapsed < iFrameDuration)
+            try
             {
-                sr.color = flashOn ? flashColor : original;
-                flashOn = !flashOn;
-                yield return new WaitForSeconds(flashInterval);
-                elapsed += flashInterval;
+                while (elapsed < iFrameDuration)
+                {
+                    sr.color = flashOn ? flashColor : original;
+                    flashOn = !flashOn;
+                    yield return new WaitForSeconds(flashInterval);
+                    elapsed += flashInterval;
+                }
             }
-
-            sr.color = original;
+            finally
+            {
+                // Guard: always restore original color
+                sr.color = original;
+            }
         }
         else
         {
@@ -213,6 +237,7 @@ public class PlayerController : MonoBehaviour
 
         isInvulnerable = false;
     }
+
 
     private void Die()
     {
@@ -269,38 +294,49 @@ public class PlayerController : MonoBehaviour
         isDashing = true;
         canDash = false;
 
-        // trigger invulnerability frames
         StartCoroutine(InvulnerabilityCoroutine());
 
-        // Dash start
         dashSpeedLineFX.SetActive(true);
-        dashSpeedLineFX.transform.SetParent(transform, false); // attach to player
-        dashSpeedLineFX.transform.localPosition = Vector3.zero; // center on player
+        dashSpeedLineFX.transform.SetParent(transform, false);
+        dashSpeedLineFX.transform.localPosition = Vector3.zero;
 
         float elapsed = 0f;
         Vector2 dashVelocity = direction.normalized * stats.moveSpeed * dashMultiplier;
 
-        // spawn afterimages while dashing
         GetComponent<AfterImageController>().StartAfterImages(dashDuration);
+
+        // --- Slow Motion Start ---
+        if (enableDashSlowMo)
+        {
+            Debug.Log("[Dash] Entering slow motion");
+            DOTween.To(() => Time.timeScale, x => Time.timeScale = x, slowMoScale, slowMoEaseIn);
+        }
+
+        // --- Player squash/stretch during dash ---
+        // (your squeeze code here)
 
         while (elapsed < dashDuration)
         {
             rb.linearVelocity = dashVelocity;
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime; // use unscaled time so dash isn’t slowed
             yield return null;
         }
 
-        // reset velocity so player can move again
         rb.linearVelocity = Vector2.zero;
-
         dashSpeedLineFX.SetActive(false);
-
         isDashing = false;
 
-        // cooldown
-        yield return new WaitForSeconds(dashCooldown);
+        // --- Slow Motion End ---
+        if (enableDashSlowMo)
+        {
+            Debug.Log("[Dash] Exiting slow motion");
+            DOTween.To(() => Time.timeScale, x => Time.timeScale = x, 1f, slowMoEaseOut);
+        }
+
+        yield return new WaitForSecondsRealtime(dashCooldown); // cooldown unaffected by slowmo
         canDash = true;
     }
+
 
     private void FixedUpdate()
     {
@@ -392,5 +428,10 @@ public class PlayerController : MonoBehaviour
             nearbyItem = null;
             pickupPromptUI.SetActive(false);  // hide after pickup
         }
+    }
+
+    public int GetCurrentHealth()
+    {
+        return currentHealth;
     }
 }

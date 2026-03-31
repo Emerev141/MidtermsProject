@@ -91,8 +91,20 @@ public class Shoot : MonoBehaviour
 
     public void ShootProjectile()
     {
-        // Trigger squeeze on the gun (DOTween)
+        // Gun squeeze
         if (gunScript != null) gunScript.TriggerSqueezeDOT();
+
+        // Player squeeze (on parent)
+        var playerSqueeze = GetComponentInParent<PlayerSqueeze>();
+        if (playerSqueeze != null)
+        {
+            Debug.Log("[ShootProjectile] Triggering PlayerSqueezeDOT on parent");
+            playerSqueeze.TriggerSqueezeDOT();
+        }
+        else
+        {
+            Debug.LogWarning("[ShootProjectile] No PlayerSqueeze component found on parent!");
+        }
 
         // Calculate base angle from shootPoint forward
         float baseAngle = Mathf.Atan2(shootPoint.right.y, shootPoint.right.x) * Mathf.Rad2Deg;
@@ -119,9 +131,23 @@ public class Shoot : MonoBehaviour
         Rigidbody2D rb = projectile.GetComponent<Rigidbody2D>();
         if (rb != null)
         {
-            Vector2 sprayedDirection = new Vector2(Mathf.Cos(finalAngle * Mathf.Deg2Rad),
-                                                   Mathf.Sin(finalAngle * Mathf.Deg2Rad)).normalized;
+            Vector2 sprayedDirection = new Vector2(
+            Mathf.Cos(finalAngle * Mathf.Deg2Rad),
+            Mathf.Sin(finalAngle * Mathf.Deg2Rad)
+            ); // no .normalized
+
+
             rb.linearVelocity = sprayedDirection * shootForce;
+
+            // Screen shake (directional recoil)
+            if (screenShake == null && Camera.main != null)
+            {
+                screenShake = Camera.main.GetComponent<ScreenShake>();
+            }
+            if (screenShake != null)
+            {
+                screenShake.triggershake(shakeDuration, shakeMagnitude, sprayedDirection, shootForce);
+            }
         }
 
         // prefer using the muzzleVfxPrefab assigned on this gun
@@ -195,16 +221,6 @@ public class Shoot : MonoBehaviour
             // fallback: play at camera position for consistent 2D volume
             Vector3 pos = Camera.main != null ? Camera.main.transform.position : Vector3.zero;
             AudioSource.PlayClipAtPoint(fireSfx, pos, fireVolume);
-        }
-
-        // Screen shake
-        if (screenShake == null && Camera.main != null)
-        {
-            screenShake = Camera.main.GetComponent<ScreenShake>();
-        }
-        if (screenShake != null)
-        {
-            screenShake.triggershake(shakeDuration, shakeMagnitude);
         }
     }
     private System.Collections.IEnumerator FadeAndDestroyLight(Light2D light, float duration)

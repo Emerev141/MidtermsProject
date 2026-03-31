@@ -67,6 +67,11 @@ public class PlayerStats : MonoBehaviour
                     critChance = baseCritChance * critChanceMultiplier;
                 }
                 break;
+            case StatType.Health:
+                var player = Object.FindFirstObjectByType<PlayerController>();
+                if (player != null)
+                    ApplyHealthUpgrade(player, data);
+                break;
         }
 
         Debug.Log($"Applied {data.upgradeName}: {data.value} {data.valueType} {data.statType}");
@@ -94,5 +99,20 @@ public class PlayerStats : MonoBehaviour
         }
 
         return finalDamage;
+    }
+
+    public void ApplyHealthUpgrade(PlayerController player, PlayerUpgradeData data)
+    {
+        if (data.valueType == UpgradeValueType.Flat)
+        {
+            player.SetHealth(player.GetCurrentHealth() + (int)data.value);
+        }
+        else
+        {
+            player.maxHealth = Mathf.RoundToInt(player.maxHealth * (1f + data.value));
+            player.SetHealth(player.maxHealth); // reset to new max
+        }
+
+        Debug.Log($"Applied {data.upgradeName}: {data.value} {data.valueType} Health");
     }
 }
