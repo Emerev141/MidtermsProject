@@ -115,6 +115,7 @@ MonoBehaviour:
   sfxVolume: 0.087
   gunFlashLightPrefab: {fileID: 8861541946256090749, guid: 1a60fa1535e052f41833ab1e38ae3dd9, type: 3}
   impactLightFadeDuration: 0.136
+  critPrefab: {fileID: 7088364401558506803, guid: 1a6b5267bbd8c1148898ddd06bdff371, type: 3}
 --- !u!50 &-5439578825520246838
 Rigidbody2D:
   serializedVersion: 5

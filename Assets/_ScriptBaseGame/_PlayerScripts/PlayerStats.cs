@@ -17,13 +17,15 @@ public class PlayerStats : MonoBehaviour
     public int baseDamage = 10;
     [Range(0f, 1f)] public float critChance = 0.2f;
     public float critMultiplier = 2f;
+    private float damageMultiplier = 1f; // NEW
 
     public int CalculateFinalDamage()
     {
-        int damage = baseDamage;
+        int damage = Mathf.RoundToInt(baseDamage * damageMultiplier);
+
         if (Random.value < critChance)
         {
-            damage = Mathf.RoundToInt(baseDamage * critMultiplier);
+            damage = Mathf.RoundToInt(damage * critMultiplier);
             Debug.Log("[PlayerStats] CRITICAL STRIKE!");
         }
         return damage;
@@ -71,6 +73,16 @@ public class PlayerStats : MonoBehaviour
                 var player = Object.FindFirstObjectByType<PlayerController>();
                 if (player != null)
                     ApplyHealthUpgrade(player, data);
+                break;
+            case StatType.Damage:
+                if (data.valueType == UpgradeValueType.Flat)
+                {
+                    baseDamage += (int)data.value;
+                }
+                else
+                {
+                    damageMultiplier += data.value; // e.g. +0.1f for +10%
+                }
                 break;
         }
 

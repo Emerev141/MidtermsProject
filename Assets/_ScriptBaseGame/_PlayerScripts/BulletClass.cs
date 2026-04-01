@@ -19,6 +19,9 @@ public class Bullet : MonoBehaviour
     public GameObject gunFlashLightPrefab;
     [Range(0.05f, 0.5f)] public float impactLightFadeDuration = 0.15f;
 
+    [Header("Critical Strike Effect")]
+    [SerializeField] private GameObject critPrefab;
+
     protected bool hasHit = false;
     protected Collider2D col;
     protected Rigidbody2D rb;
@@ -33,8 +36,10 @@ public class Bullet : MonoBehaviour
         this.stats = stats;
     }
 
-    protected virtual int CalculateFinalDamage()
+    protected virtual int CalculateFinalDamage(out bool isCritical)
     {
+        isCritical = false;
+
         if (stats == null)
         {
             Debug.LogWarning("[Bullet] PlayerStats not set, using base damage");
@@ -45,6 +50,7 @@ public class Bullet : MonoBehaviour
 
         if (finalDamage > damage)
         {
+            isCritical = true;
             Debug.Log($"[Bullet] CRITICAL STRIKE! Enemy took {finalDamage} damage (base {damage})");
         }
         else
@@ -103,15 +109,29 @@ public class Bullet : MonoBehaviour
         Enemy enemy = collision.gameObject.GetComponent<Enemy>();
         if (enemy != null && stats != null)
         {
-            int damage = stats.CalculateFinalDamage();
+            bool isCritical;
+            int damage = CalculateFinalDamage(out isCritical);
 
-            // Bullet trajectory
             Vector3 bulletDirection = rb.linearVelocity.normalized;
-
-            // Pass everything into TakeDamage
             enemy.TakeDamage(damage, hitPoint, bulletDirection);
 
             Debug.Log($"[Bullet] Hit enemy for {damage}");
+
+            // Spawn crit effect if critical
+
+            enemy.TakeDamage(damage, hitPoint, bulletDirection);
+
+            if (isCritical)
+            {
+                // Spawn crit prefab at hit point
+                if (critPrefab != null)
+                    Instantiate(critPrefab, hitPoint, Quaternion.identity);
+
+                // Trigger global FX
+                if (CriticalStrikeFX.Instance != null)
+                    CriticalStrikeFX.Instance.PlayCriticalFX(hitPoint);
+            }
+
         }
 
         PlayHitEffects(hitPoint);

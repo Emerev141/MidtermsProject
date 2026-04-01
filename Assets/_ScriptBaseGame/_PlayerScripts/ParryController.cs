@@ -14,8 +14,17 @@ public class ParryController : MonoBehaviour
     [SerializeField] private float hitStopDuration = 0.1f; // tweakable in Inspector
     [SerializeField] private bool fullFreeze = true;       // toggle full freeze vs slow motion
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip parrySfx;
+    [Range(0f, 1f)][SerializeField] private float parryVolume = 1f;
+
+
     private bool isParrying = false;
     private ParryFlashFX flashFX;
+
+    [Header("Parry FX")]
+    [SerializeField] private ParticleSystem parrySuccessVfx;
+
 
     public static event System.Action OnParrySuccess;
 
@@ -98,8 +107,27 @@ public class ParryController : MonoBehaviour
         OnParrySuccess?.Invoke();
 
         flashFX?.TriggerFlash(); // play the white flash
-    }
 
+        if (parrySuccessVfx != null)
+        {
+            ParticleSystem vfx = Instantiate(parrySuccessVfx, transform.position, Quaternion.identity);
+            vfx.Play();
+            Destroy(vfx.gameObject, vfx.main.duration + vfx.main.startLifetime.constantMax);
+        }
+
+        if (parrySfx != null)
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySfx(parrySfx, parryVolume);
+            }
+            else
+            {
+                // fallback if AudioManager not present
+                AudioSource.PlayClipAtPoint(parrySfx, transform.position, parryVolume);
+            }
+        }
+    }
 
     void OnDrawGizmosSelected()
     {
